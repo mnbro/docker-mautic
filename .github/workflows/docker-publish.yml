@@ -10,7 +10,8 @@ env:
   # Use docker.io for Docker Hub if empty
   REGISTRY: ghcr.io
   # github.repository as <account>/<repo>
-  IMAGE_NAME: mautic4
+  branch: mautic4
+  platforms_to_build_for: linux/arm64
 
 jobs:
   build:
@@ -26,15 +27,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: mautic4
+          ref: ${{ env.branch }}
 
       - name: Sync upstream changes
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.2
         with:
-          target_sync_branch: mautic4
-        # REQUIRED 'target_repo_token' exactly like this!
+          target_sync_branch: ${{ env.branch }}
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
-          upstream_sync_branch: mautic4
+          upstream_sync_branch: ${{ env.branch }}
           upstream_sync_repo: mautic/docker-mautic
           upstream_repo_access_token: ${{ secrets.UPSTREAM_REPO_SECRET }}
 
@@ -45,25 +45,17 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Login to GitHub Package Registry
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v3
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
       - name: Build and push
         uses: docker/build-push-action@v3
         with:
           context: .
           file: apache/Dockerfile
-          platforms: linux/arm64
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          platforms: ${{ env.platforms_to_build_for }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.actor }}/${{ github.ref }}:latest
