@@ -26,13 +26,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          ref: 'mautic4'
-          
-      - uses: tgymnich/fork-sync@v1.4
+          ref: mautic4
+
+      - name: Sync upstream changes
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.2
         with:
-          owner: mnbro
-          base: mautic4
-          head: mautic4
+          target_sync_branch: mautic4
+        # REQUIRED 'target_repo_token' exactly like this!
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
+          upstream_sync_branch: mautic4
+          upstream_sync_repo: mautic/docker-mautic
+          upstream_repo_access_token: ${{ secrets.UPSTREAM_REPO_SECRET }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
